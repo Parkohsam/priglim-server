@@ -1,12 +1,10 @@
-// const dns = require("node:dns");
-// dns.setServers(["1.1.1.1", "8.8.8.8"]);
-
-
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { createYoga, createSchema } = require("graphql-yoga");
 const { getAuth } = require("firebase-admin/auth");
+const packageTypeDefs = require("./schema/package");
+const packageResolvers = require("./resolvers/package");
 require("./config/firebaseAdmin");
 
 const connectDB = require("./config/db");
@@ -20,8 +18,8 @@ app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 
 const yoga = createYoga({
   schema: createSchema({
-    typeDefs: [userTypeDefs],
-    resolvers: [userResolvers],
+    typeDefs: [userTypeDefs, packageTypeDefs],
+    resolvers: [userResolvers, packageResolvers],
   }),
   context: async ({ request }) => {
     const authHeader = request.headers.get("authorization") || "";
