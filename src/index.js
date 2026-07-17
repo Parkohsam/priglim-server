@@ -1,13 +1,15 @@
 const dns = require("node:dns");
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
+// server/src/index.js
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { createYoga, createSchema } = require("graphql-yoga");
+const { getAuth } = require("firebase-admin/auth");
+require("./config/firebaseAdmin");
 
 const connectDB = require("./config/db");
-const verifyFirebaseToken = require("./middleware/verifyFirebaseToken");
 
 const userTypeDefs = require("./schema/user");
 const userResolvers = require("./resolvers/user");
@@ -21,15 +23,26 @@ const yoga = createYoga({
     typeDefs: [userTypeDefs],
     resolvers: [userResolvers],
   }),
-  context: (initialContext) => {
-    return { firebaseUser: initialContext.firebaseUser || null };
+  context: async ({ request }) => {
+    const authHeader = request.headers.get("authorization") || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+
+    if (!token) {
+      return { firebaseUser: null };
+    }
+
+    try {
+      const decoded = await getAuth().verifyIdToken(token);
+      return { firebaseUser: decoded };
+    } catch (err) {
+      console.error("Token verification FAILED:", err.message);
+      return { firebaseUser: null };
+    }
   },
   graphqlEndpoint: "/graphql",
 });
 
-app.use("/graphql", verifyFirebaseToken, (req, res) => {
-  return yoga(req, res, { firebaseUser: req.firebaseUser });
-});
+app.use("/graphql", yoga);
 
 app.get("/", (req, res) => res.send("Priglim API is running"));
 
