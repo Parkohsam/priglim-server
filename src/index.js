@@ -5,9 +5,10 @@ const { createYoga, createSchema } = require("graphql-yoga");
 const { getAuth } = require("firebase-admin/auth");
 const packageTypeDefs = require("./schema/package");
 const packageResolvers = require("./resolvers/package");
-require("./config/firebaseAdmin");
-
+const bookingTypeDefs = require("./schema/booking");
+const bookingResolvers = require("./resolvers/booking");
 const connectDB = require("./config/db");
+require("./config/firebaseAdmin");
 
 const userTypeDefs = require("./schema/user");
 const userResolvers = require("./resolvers/user");
@@ -18,8 +19,8 @@ app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 
 const yoga = createYoga({
   schema: createSchema({
-    typeDefs: [userTypeDefs, packageTypeDefs],
-    resolvers: [userResolvers, packageResolvers],
+    typeDefs: [userTypeDefs, packageTypeDefs, bookingTypeDefs],
+    resolvers: [userResolvers, packageResolvers, bookingResolvers],
   }),
   context: async ({ request }) => {
     const authHeader = request.headers.get("authorization") || "";
