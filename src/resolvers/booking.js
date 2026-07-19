@@ -1,12 +1,17 @@
 const Booking = require("../models/Booking");
 const Package = require("../models/Package");
-const { requireAuth } = require("../utils/authGuards");
+const { requireAuth, requireAdmin } = require("../utils/authGuards");
 
 const resolvers = {
   Query: {
     myBookings: async (_parent, _args, context) => {
       const user = await requireAuth(context);
       return Booking.find({ user: user._id }).sort({ createdAt: -1 });
+    },
+
+    allBookings: async (_parent, _args, context) => {
+      await requireAdmin(context);
+      return Booking.find().populate("package").populate("user").sort({ createdAt: -1 });
     },
   },
 

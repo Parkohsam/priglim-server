@@ -13,6 +13,7 @@ const typeDefs = /* GraphQL */ `
 
   type Booking {
     id: ID!
+    user: User!
     package: Package!
     numberOfPilgrims: Int!
     pilgrimDetails: [Pilgrim!]!
@@ -32,6 +33,7 @@ const typeDefs = /* GraphQL */ `
 
   type Query {
     myBookings: [Booking!]!
+    allBookings: [Booking!]!
   }
 
   type Mutation {
