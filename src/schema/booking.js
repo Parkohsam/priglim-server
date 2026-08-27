@@ -13,8 +13,8 @@ const typeDefs = /* GraphQL */ `
 
   type Booking {
     id: ID!
-    user: User!
-    package: Package!
+    user: User
+    package: Package
     numberOfPilgrims: Int!
     pilgrimDetails: [Pilgrim!]!
     totalAmount: Float!
@@ -22,6 +22,9 @@ const typeDefs = /* GraphQL */ `
     visaStatus: String!
     paymentStatus: String!
     refundStatus: String!
+    paymentMethod: String
+    receiptUrl: String
+    reviewNote: String
     createdAt: String!
   }
 
@@ -31,6 +34,11 @@ const typeDefs = /* GraphQL */ `
     pilgrimDetails: [PilgrimInput!]!
   }
 
+  type PaymentInitResponse {
+    authorizationUrl: String!
+    reference: String!
+  }
+
   type Query {
     myBookings: [Booking!]!
     allBookings: [Booking!]!
@@ -38,6 +46,10 @@ const typeDefs = /* GraphQL */ `
 
   type Mutation {
     createBooking(input: CreateBookingInput!): Booking!
+    initializePayment(bookingId: ID!): PaymentInitResponse!
+    submitBankTransferProof(bookingId: ID!, receiptUrl: String!): Booking!
+    approveBankTransferPayment(bookingId: ID!): Booking!
+    rejectBankTransferPayment(bookingId: ID!, reason: String): Booking!
   }
 `;
 

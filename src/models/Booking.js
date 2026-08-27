@@ -47,6 +47,14 @@ const bookingSchema = new mongoose.Schema(
       enum: ["not_applicable", "pending", "processed", "failed"],
       default: "not_applicable",
     },
+
+    // Bank transfer support
+    paymentMethod: {
+      type: String,
+      enum: ["paystack", "bank_transfer"],
+    },
+    receiptUrl: { type: String },
+    reviewNote: { type: String },
   },
   { timestamps: true }
 );

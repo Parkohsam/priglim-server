@@ -13,9 +13,18 @@ require("./config/firebaseAdmin");
 const userTypeDefs = require("./schema/user");
 const userResolvers = require("./resolvers/user");
 
+const paystackWebhook = require("./webhooks/paystack.webhook");
+
 const app = express();
 
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+
+// Mounted BEFORE the yoga /graphql handler and using its own express.raw()
+// middleware (defined inside paystack.webhook.js) so the request body
+// arrives unparsed — Paystack's signature check needs the exact raw
+// bytes, not a re-serialized JSON object. Do not add a global
+// express.json() above this line, or signature verification will break.
+app.use("/webhooks", paystackWebhook);
 
 const yoga = createYoga({
   schema: createSchema({

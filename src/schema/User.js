@@ -6,10 +6,12 @@ const typeDefs = /* GraphQL */ `
     phone: String
     role: String!
     avatar: String
+    createdAt: String!
   }
 
   type Query {
     me: User
+    users: [User!]!
   }
 
   type Mutation {

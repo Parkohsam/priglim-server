@@ -1,4 +1,5 @@
 const Package = require("../models/Package");
+const Booking = require("../models/Booking");
 const { requireAdmin } = require("../utils/authGuards");
 
 const resolvers = {
@@ -46,6 +47,21 @@ const resolvers = {
 
     deletePackage: async (_parent, { id }, context) => {
       await requireAdmin(context);
+
+      // SAFETY: never allow deleting a package that bookings still
+      // reference — doing so leaves those bookings pointing at nothing,
+      // which breaks anything that expects booking.package to exist
+      // (like the admin bookings list, which crashed entirely from
+      // exactly this). Closing the package is the safe way to retire
+      // it without corrupting existing booking records.
+      const bookingCount = await Booking.countDocuments({ package: id });
+      if (bookingCount > 0) {
+        throw new Error(
+          `Cannot delete this package — ${bookingCount} booking(s) still reference it. ` +
+          `Use "Close" (setPackageAvailability) instead to stop new bookings while preserving booking history.`
+        );
+      }
+
       const deleted = await Package.findByIdAndDelete(id);
       return !!deleted;
     },
