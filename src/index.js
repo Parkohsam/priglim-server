@@ -1,8 +1,10 @@
 require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const { createYoga, createSchema } = require("graphql-yoga");
 const { getAuth } = require("firebase-admin/auth");
+
 const packageTypeDefs = require("./schema/package");
 const packageResolvers = require("./resolvers/package");
 const bookingTypeDefs = require("./schema/booking");
@@ -11,20 +13,21 @@ const connectDB = require("./config/db");
 require("./config/firebaseAdmin");
 
 const userTypeDefs = require("./schema/user");
-const userResolvers = require("./resolvers/user");
+const userResolvers = require("./resolvers/User");
 
 const paystackWebhook = require("./webhooks/paystack.webhook");
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 
-// Mounted BEFORE the yoga /graphql handler and using its own express.raw()
-// middleware (defined inside paystack.webhook.js) so the request body
-// arrives unparsed — Paystack's signature check needs the exact raw
-// bytes, not a re-serialized JSON object. Do not add a global
-// express.json() above this line, or signature verification will break.
+// Must stay before any global express.json() call.
+// Paystack verifies the raw request bytes.
 app.use("/webhooks", paystackWebhook);
+
+// JSON parsing only for auth routes
+app.use("/api/auth", express.json(), authRoutes);
 
 const yoga = createYoga({
   schema: createSchema({

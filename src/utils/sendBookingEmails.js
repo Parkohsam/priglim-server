@@ -90,16 +90,7 @@ function userConfirmationHtml(payload) {
 }
 
 function adminNotificationHtml(payload) {
-  const pilgrimRows = payload.pilgrims
-    .map(
-      (p, i) => `
-      <tr>
-        <td style="padding: 6px 0; color: #6B7280;">Pilgrim ${i + 1}</td>
-        <td style="padding: 6px 0; text-align: right;">${p.name} — ${p.passportNumber}</td>
-      </tr>`
-    )
-    .join("");
-
+  const bookingsUrl = `${process.env.CLIENT_URL}/admin/bookings`;
   return `
   <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; color: #1B2333;">
     <div style="background: #16233F; padding: 24px; border-radius: 8px 8px 0 0;">
@@ -113,7 +104,7 @@ function adminNotificationHtml(payload) {
         </tr>
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Customer</td>
-          <td style="padding: 6px 0; text-align: right;">${payload.userName} (${payload.userEmail})</td>
+          <td style="padding: 6px 0; text-align: right;">${payload.userName}</td>
         </tr>
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Package</td>
@@ -129,8 +120,15 @@ function adminNotificationHtml(payload) {
             ${formatNaira(payload.totalAmount)}
           </td>
         </tr>
-        ${pilgrimRows}
       </table>
+      <p style="margin-top: 20px;">
+        <a href="${bookingsUrl}" style="display: inline-block; background: #16233F; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; font-size: 14px;">
+          View full details in admin panel
+        </a>
+      </p>
+      <p style="font-size: 12px; color: #6B7280; margin-top: 16px;">
+        Pilgrim passport details aren't included here for security — sign in to the admin panel to view them.
+      </p>
     </div>
   </div>
   `;
@@ -338,6 +336,7 @@ async function sendBankTransferRejectedEmail(payload) {
 }
 
 module.exports = {
+  sendViaBrevo,
   sendBookingEmails,
   sendPaymentConfirmedEmail,
   sendWelcomeEmail,
