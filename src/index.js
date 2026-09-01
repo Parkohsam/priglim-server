@@ -5,8 +5,8 @@ const cors = require("cors");
 const { createYoga, createSchema } = require("graphql-yoga");
 const { getAuth } = require("firebase-admin/auth");
 
-const packageTypeDefs = require("./schema/package");
-const packageResolvers = require("./resolvers/package");
+const packageTypeDefs = require("./schema/Package");
+const packageResolvers = require("./resolvers/Package");
 const bookingTypeDefs = require("./schema/booking");
 const bookingResolvers = require("./resolvers/booking");
 const connectDB = require("./config/db");
