@@ -5,7 +5,7 @@ const packageSchema = new mongoose.Schema(
     title: { type: String, required: true },
     type: { type: String, enum: ["hajj", "umrah", "ramadan_umrah"], required: true },
     description: { type: String, required: true },
-    price: { type: Number, required: true },
+    price: { type: Number, required: true, min: 0 },
     duration: { type: String, required: true },
 
     bookingOpenDate: { type: Date, required: true },

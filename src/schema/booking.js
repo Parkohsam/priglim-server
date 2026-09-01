@@ -42,11 +42,6 @@ const typeDefs = /* GraphQL */ `
     pilgrimDetails: [PilgrimInput!]!
   }
 
-  type PaymentInitResponse {
-    authorizationUrl: String!
-    reference: String!
-  }
-
   type Query {
     myBookings: [Booking!]!
     allBookings: [Booking!]!
@@ -54,7 +49,6 @@ const typeDefs = /* GraphQL */ `
 
   type Mutation {
     createBooking(input: CreateBookingInput!): Booking!
-    initializePayment(bookingId: ID!): PaymentInitResponse!
     submitBankTransferProof(bookingId: ID!, receiptUrl: String!): Booking!
     approveBankTransferPayment(bookingId: ID!): Booking!
     rejectBankTransferPayment(bookingId: ID!, reason: String): Booking!

@@ -2,6 +2,9 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const depthLimit = require("graphql-depth-limit");
 const { createYoga, createSchema } = require("graphql-yoga");
 const { getAuth } = require("firebase-admin/auth");
 
@@ -15,24 +18,34 @@ require("./config/firebaseAdmin");
 const userTypeDefs = require("./schema/User");
 const userResolvers = require("./resolvers/User");
 
-const paystackWebhook = require("./webhooks/paystack.webhook");
 const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(helmet());
 
-// Must stay before any global express.json() call.
-// Paystack verifies the raw request bytes.
-app.use("/webhooks", paystackWebhook);
+const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:3000", "http://127.0.0.1:3000"].filter(Boolean);
+app.use(
+  cors({
+    origin(origin, cb) {
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
 
-// JSON parsing only for auth routes
-app.use("/api/auth", express.json(), authRoutes);
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false, message: { message: "Too many requests, please try again later." } });
+const graphqlLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false });
+
+app.use("/api/auth", authLimiter, express.json(), authRoutes);
 
 const yoga = createYoga({
   schema: createSchema({
     typeDefs: [userTypeDefs, packageTypeDefs, bookingTypeDefs],
     resolvers: [userResolvers, packageResolvers, bookingResolvers],
+    validators: [depthLimit(6)],
   }),
   context: async ({ request }) => {
     const authHeader = request.headers.get("authorization") || "";
@@ -51,9 +64,11 @@ const yoga = createYoga({
     }
   },
   graphqlEndpoint: "/graphql",
+  graphiql: process.env.NODE_ENV !== "production",
+  landingPage: false,
 });
 
-app.use("/graphql", yoga);
+app.use("/graphql", graphqlLimiter, yoga);
 
 app.get("/", (req, res) => res.send("Priglim API is running"));
 

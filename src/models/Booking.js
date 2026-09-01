@@ -30,7 +30,7 @@ const bookingSchema = new mongoose.Schema(
     },
     pilgrimDetails: [pilgrimSchema],
 
-    totalAmount: { type: Number, required: true },
+    totalAmount: { type: Number, required: true, min: 0 },
 
     status: {
       type: String,
@@ -56,10 +56,10 @@ const bookingSchema = new mongoose.Schema(
       default: "not_applicable",
     },
 
-    // Bank transfer support
+    // Bank transfer only — paystack removed
     paymentMethod: {
       type: String,
-      enum: ["paystack", "bank_transfer"],
+      enum: ["bank_transfer"],
     },
     receiptUrl: { type: String },
     reviewNote: { type: String },

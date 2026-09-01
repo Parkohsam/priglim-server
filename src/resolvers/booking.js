@@ -1,8 +1,29 @@
 const Booking = require("../models/Booking");
 const Package = require("../models/Package");
 const { requireAuth, requireAdmin, requireRecentAuth } = require("../utils/authGuards");
-const {sendBookingEmails, sendPaymentConfirmedEmail, sendBankTransferSubmittedEmail, sendBankTransferRejectedEmail,} = require("../utils/sendBookingEmails");
-const { initializeTransaction } = require("../services/paystack.service");
+const { sendBookingEmails, sendPaymentConfirmedEmail, sendBankTransferSubmittedEmail, sendBankTransferRejectedEmail } = require("../utils/sendBookingEmails");
+const { GraphQLError } = require("graphql");
+
+const ALLOWED_CLOUDINARY_HOST = "res.cloudinary.com";
+const ALLOWED_CLOUDINARY_PREFIX = "/dlcq2g3cu/";
+
+function validateReceiptUrl(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new GraphQLError("Invalid receipt URL", { extensions: { code: "BAD_USER_INPUT" } });
+  }
+  if (parsed.protocol !== "https:") {
+    throw new GraphQLError("Receipt URL must use https", { extensions: { code: "BAD_USER_INPUT" } });
+  }
+  if (parsed.hostname !== ALLOWED_CLOUDINARY_HOST || !parsed.pathname.startsWith(ALLOWED_CLOUDINARY_PREFIX)) {
+    throw new GraphQLError("Receipt must be a Cloudinary image from the configured account", { extensions: { code: "BAD_USER_INPUT" } });
+  }
+  if (parsed.pathname.match(/\.(svg|html|htm)(\?|$)/i)) {
+    throw new GraphQLError("Receipt must be an image (svg/html not allowed)", { extensions: { code: "BAD_USER_INPUT" } });
+  }
+}
 
 const resolvers = {
   Query: {
@@ -36,6 +57,9 @@ const resolvers = {
         throw new Error("This package is outside its booking window");
       }
 
+      if (numberOfPilgrims < 1 || numberOfPilgrims > 20) {
+        throw new GraphQLError("numberOfPilgrims must be between 1 and 20", { extensions: { code: "BAD_USER_INPUT" } });
+      }
       if (pilgrimDetails.length !== numberOfPilgrims) {
         throw new Error(
           `numberOfPilgrims (${numberOfPilgrims}) does not match the number of pilgrim details provided (${pilgrimDetails.length})`
@@ -83,7 +107,7 @@ const resolvers = {
       sendBookingEmails({
         bookingId: booking._id.toString(),
         userEmail: user.email,
-        userName: user.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : (user.fullName || user.name || "there"),
+        userName: user.fullName || user.name || "there",
         packageTitle: pkg.title,
         packageType: pkg.type,
         departureDate: pkg.departureDate,
@@ -98,34 +122,8 @@ const resolvers = {
       return booking.populate("package");
     },
 
-    initializePayment: async (_parent, { bookingId }, context) => {
-      const user = await requireRecentAuth(context);
-
-      const booking = await Booking.findById(bookingId);
-      if (!booking) {
-        throw new Error("Booking not found");
-      }
-
-      if (booking.user.toString() !== user._id.toString()) {
-        throw new Error("You are not authorized to pay for this booking");
-      }
-
-      if (booking.paymentStatus === "paid") {
-        throw new Error("This booking has already been paid for");
-      }
-
-      const { authorizationUrl, reference } = await initializeTransaction({
-        email: user.email,
-        amountInNaira: booking.totalAmount,
-        metadata: { bookingId: booking._id.toString() },
-        callbackUrl: `${process.env.CLIENT_URL}/bookings/${booking._id}`,
-      });
-
-      return { authorizationUrl, reference };
-    },
-
     submitBankTransferProof: async (_parent, { bookingId, receiptUrl }, context) => {
-      const user = await requireAuth(context);
+      const user = await requireRecentAuth(context);
 
       const booking = await Booking.findById(bookingId);
       if (!booking) {
@@ -139,6 +137,17 @@ const resolvers = {
       if (booking.paymentStatus === "paid") {
         throw new Error("This booking has already been paid for");
       }
+      if (booking.status === "cancelled") {
+        throw new Error("This booking has been cancelled and cannot be paid for");
+      }
+      if (booking.status === "paid_pending_review") {
+        throw new Error("This booking is already awaiting review");
+      }
+      if (booking.status === "confirmed") {
+        throw new Error("This booking is already confirmed");
+      }
+
+      validateReceiptUrl(receiptUrl);
 
       booking.paymentMethod = "bank_transfer";
       booking.receiptUrl = receiptUrl;
@@ -172,6 +181,9 @@ const resolvers = {
       if (booking.paymentStatus === "paid") {
         throw new Error("This booking has already been marked as paid");
       }
+      if (booking.status !== "paid_pending_review") {
+        throw new Error("Only bookings awaiting review can be approved");
+      }
 
       booking.paymentStatus = "paid";
       booking.status = "confirmed";
@@ -199,8 +211,15 @@ const resolvers = {
       if (!booking) {
         throw new Error("Booking not found");
       }
+      if (booking.paymentStatus === "paid") {
+        throw new Error("Cannot reject a booking that is already marked as paid");
+      }
+      if (booking.status !== "paid_pending_review") {
+        throw new Error("Only bookings awaiting review can be rejected");
+      }
 
       booking.status = "pending_payment";
+      booking.paymentStatus = "unpaid";
       booking.paymentMethod = undefined;
       booking.receiptUrl = undefined;
       booking.reviewNote = reason || "";

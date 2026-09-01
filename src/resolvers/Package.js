@@ -20,12 +20,14 @@ const resolvers = {
   Mutation: {
     createPackage: async (_parent, { input }, context) => {
       await requireAdmin(context);
+      validatePackageInput(input);
       return Package.create(input);
     },
 
     updatePackage: async (_parent, { id, input }, context) => {
       await requireAdmin(context);
-      const updated = await Package.findByIdAndUpdate(id, input, { new: true });
+      validatePackageInput(input);
+      const updated = await Package.findByIdAndUpdate(id, input, { new: true, runValidators: true });
       if (!updated) throw new Error("Package not found");
       return updated;
     },
@@ -67,5 +69,29 @@ const resolvers = {
     },
   },
 };
+
+function validatePackageInput(input) {
+  const { GraphQLError } = require("graphql");
+  if (input.price != null && (typeof input.price !== "number" || input.price <= 0)) {
+    throw new GraphQLError("Price must be a positive number", { extensions: { code: "BAD_USER_INPUT" } });
+  }
+  const dates = ["bookingOpenDate", "bookingCloseDate", "departureDate", "returnDate"];
+  for (const key of dates) {
+    if (input[key] && isNaN(Date.parse(input[key]))) {
+      throw new GraphQLError(`Invalid date for ${key}`, { extensions: { code: "BAD_USER_INPUT" } });
+    }
+  }
+  if (input.bookingOpenDate && input.bookingCloseDate && input.departureDate && input.returnDate) {
+    const open = new Date(input.bookingOpenDate);
+    const close = new Date(input.bookingCloseDate);
+    const dep = new Date(input.departureDate);
+    const ret = new Date(input.returnDate);
+    if (!(open < close && close < dep && dep < ret)) {
+      throw new GraphQLError("Dates must satisfy: bookingOpenDate < bookingCloseDate < departureDate < returnDate", {
+        extensions: { code: "BAD_USER_INPUT" },
+      });
+    }
+  }
+}
 
 module.exports = resolvers;

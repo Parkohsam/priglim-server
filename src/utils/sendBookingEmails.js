@@ -29,8 +29,21 @@ async function sendViaBrevo({ to, subject, html }) {
   return response.json();
 }
 
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
+function escapeAttr(str) {
+  return escapeHtml(str).replace(/`/g, "&#96;");
+}
+
 function formatNaira(amount) {
-  return `₦${amount.toLocaleString()}`;
+  return `₦${Number(amount).toLocaleString()}`;
 }
 
 function formatDate(dateStr) {
@@ -48,34 +61,34 @@ function userConfirmationHtml(payload) {
       <h1 style="color: #ffffff; font-size: 18px; margin: 0;">Booking confirmed</h1>
     </div>
     <div style="border: 1px solid #E4E7ED; border-top: none; padding: 24px; border-radius: 0 0 8px 8px;">
-      <p>Hi ${payload.userName},</p>
-      <p>Your booking for <strong>${payload.packageTitle}</strong> has been received.</p>
+      <p>Hi ${escapeHtml(payload.userName)},</p>
+      <p>Your booking for <strong>${escapeHtml(payload.packageTitle)}</strong> has been received.</p>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Booking reference</td>
-          <td style="padding: 6px 0; text-align: right; font-weight: 600;">${payload.bookingId}</td>
+          <td style="padding: 6px 0; text-align: right; font-weight: 600;">${escapeHtml(payload.bookingId)}</td>
         </tr>
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Package</td>
-          <td style="padding: 6px 0; text-align: right; font-weight: 600;">${payload.packageTitle}</td>
+          <td style="padding: 6px 0; text-align: right; font-weight: 600;">${escapeHtml(payload.packageTitle)}</td>
         </tr>
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Departure</td>
-          <td style="padding: 6px 0; text-align: right;">${formatDate(payload.departureDate)}</td>
+          <td style="padding: 6px 0; text-align: right;">${escapeHtml(formatDate(payload.departureDate))}</td>
         </tr>
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Return</td>
-          <td style="padding: 6px 0; text-align: right;">${formatDate(payload.returnDate)}</td>
+          <td style="padding: 6px 0; text-align: right;">${escapeHtml(formatDate(payload.returnDate))}</td>
         </tr>
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Pilgrims</td>
-          <td style="padding: 6px 0; text-align: right;">${payload.numberOfPilgrims}</td>
+          <td style="padding: 6px 0; text-align: right;">${escapeHtml(payload.numberOfPilgrims)}</td>
         </tr>
         <tr>
           <td style="padding: 10px 0 0; color: #6B7280; border-top: 1px solid #E4E7ED;">Total due</td>
           <td style="padding: 10px 0 0; text-align: right; font-weight: 700; border-top: 1px solid #E4E7ED;">
-            ${formatNaira(payload.totalAmount)}
+            ${escapeHtml(formatNaira(payload.totalAmount))}
           </td>
         </tr>
       </table>
@@ -100,29 +113,29 @@ function adminNotificationHtml(payload) {
       <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Booking reference</td>
-          <td style="padding: 6px 0; text-align: right; font-weight: 600;">${payload.bookingId}</td>
+          <td style="padding: 6px 0; text-align: right; font-weight: 600;">${escapeHtml(payload.bookingId)}</td>
         </tr>
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Customer</td>
-          <td style="padding: 6px 0; text-align: right;">${payload.userName}</td>
+          <td style="padding: 6px 0; text-align: right;">${escapeHtml(payload.userName)}</td>
         </tr>
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Package</td>
-          <td style="padding: 6px 0; text-align: right; font-weight: 600;">${payload.packageTitle}</td>
+          <td style="padding: 6px 0; text-align: right; font-weight: 600;">${escapeHtml(payload.packageTitle)}</td>
         </tr>
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Pilgrims</td>
-          <td style="padding: 6px 0; text-align: right;">${payload.numberOfPilgrims}</td>
+          <td style="padding: 6px 0; text-align: right;">${escapeHtml(payload.numberOfPilgrims)}</td>
         </tr>
         <tr>
           <td style="padding: 10px 0 0; color: #6B7280; border-top: 1px solid #E4E7ED;">Total</td>
           <td style="padding: 10px 0 0; text-align: right; font-weight: 700; border-top: 1px solid #E4E7ED;">
-            ${formatNaira(payload.totalAmount)}
+            ${escapeHtml(formatNaira(payload.totalAmount))}
           </td>
         </tr>
       </table>
       <p style="margin-top: 20px;">
-        <a href="${bookingsUrl}" style="display: inline-block; background: #16233F; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; font-size: 14px;">
+        <a href="${escapeAttr(bookingsUrl)}" style="display: inline-block; background: #16233F; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; font-size: 14px;">
           View full details in admin panel
         </a>
       </p>
@@ -141,18 +154,18 @@ function paymentConfirmedHtml(payload) {
       <h1 style="color: #ffffff; font-size: 18px; margin: 0;">Payment received</h1>
     </div>
     <div style="border: 1px solid #E4E7ED; border-top: none; padding: 24px; border-radius: 0 0 8px 8px;">
-      <p>Hi ${payload.userName},</p>
-      <p>We've received your payment for <strong>${payload.packageTitle}</strong>. Your booking is now confirmed.</p>
+      <p>Hi ${escapeHtml(payload.userName)},</p>
+      <p>We've received your payment for <strong>${escapeHtml(payload.packageTitle)}</strong>. Your booking is now confirmed.</p>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Booking reference</td>
-          <td style="padding: 6px 0; text-align: right; font-weight: 600;">${payload.bookingId}</td>
+          <td style="padding: 6px 0; text-align: right; font-weight: 600;">${escapeHtml(payload.bookingId)}</td>
         </tr>
         <tr>
           <td style="padding: 10px 0 0; color: #6B7280; border-top: 1px solid #E4E7ED;">Amount paid</td>
           <td style="padding: 10px 0 0; text-align: right; font-weight: 700; border-top: 1px solid #E4E7ED;">
-            ${formatNaira(payload.totalAmount)}
+            ${escapeHtml(formatNaira(payload.totalAmount))}
           </td>
         </tr>
       </table>
@@ -170,11 +183,11 @@ function welcomeEmailHtml(payload) {
   return `
   <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; color: #1B2333;">
     <div style="background: #16233F; padding: 24px; border-radius: 8px 8px 0 0;">
-      <h1 style="color: #ffffff; font-size: 18px; margin: 0;">Welcome, ${payload.userName}</h1>
+      <h1 style="color: #ffffff; font-size: 18px; margin: 0;">Welcome, ${escapeHtml(payload.userName)}</h1>
     </div>
     <div style="border: 1px solid #E4E7ED; border-top: none; padding: 24px; border-radius: 0 0 8px 8px;">
       <p>Thanks for creating an account. You're ready to start planning your journey.</p>
-      <a href="${packagesUrl}"
+      <a href="${escapeAttr(packagesUrl)}"
          style="display: inline-block; margin-top: 12px; background: #16233F; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 6px; font-weight: 600; font-size: 14px;">
         Browse Hajj & Umrah packages
       </a>
@@ -215,7 +228,7 @@ async function sendBookingEmails(payload) {
 
 /**
  * Fires the payment-confirmation email to the user only. Call this from
- * the Paystack webhook, after paymentStatus is set to "paid".
+ * approveBankTransferPayment, after paymentStatus is set to "paid".
  */
 async function sendPaymentConfirmedEmail(payload) {
   try {
@@ -257,25 +270,25 @@ function bankTransferSubmittedHtml(payload) {
       <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Booking reference</td>
-          <td style="padding: 6px 0; text-align: right; font-weight: 600;">${payload.bookingId}</td>
+          <td style="padding: 6px 0; text-align: right; font-weight: 600;">${escapeHtml(payload.bookingId)}</td>
         </tr>
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Customer</td>
-          <td style="padding: 6px 0; text-align: right;">${payload.userName} (${payload.userEmail})</td>
+          <td style="padding: 6px 0; text-align: right;">${escapeHtml(payload.userName)} (${escapeHtml(payload.userEmail)})</td>
         </tr>
         <tr>
           <td style="padding: 6px 0; color: #6B7280;">Package</td>
-          <td style="padding: 6px 0; text-align: right; font-weight: 600;">${payload.packageTitle}</td>
+          <td style="padding: 6px 0; text-align: right; font-weight: 600;">${escapeHtml(payload.packageTitle)}</td>
         </tr>
         <tr>
           <td style="padding: 10px 0 0; color: #6B7280; border-top: 1px solid #E4E7ED;">Amount</td>
           <td style="padding: 10px 0 0; text-align: right; font-weight: 700; border-top: 1px solid #E4E7ED;">
-            ${formatNaira(payload.totalAmount)}
+            ${escapeHtml(formatNaira(payload.totalAmount))}
           </td>
         </tr>
       </table>
       <p style="margin-top: 16px;">
-        <a href="${payload.receiptUrl}" style="color: #16233F; font-weight: 600;">View uploaded receipt</a>
+        <a href="${escapeAttr(payload.receiptUrl)}" style="color: #16233F; font-weight: 600;">View uploaded receipt</a>
       </p>
       <p style="font-size: 13px; color: #6B7280; margin-top: 16px;">
         Please review and approve or reject this in the admin Payments page.
@@ -292,9 +305,9 @@ function bankTransferRejectedHtml(payload) {
       <h1 style="color: #ffffff; font-size: 18px; margin: 0;">We couldn't verify your payment</h1>
     </div>
     <div style="border: 1px solid #E4E7ED; border-top: none; padding: 24px; border-radius: 0 0 8px 8px;">
-      <p>Hi ${payload.userName},</p>
-      <p>We weren't able to confirm your bank transfer for <strong>${payload.packageTitle}</strong>.</p>
-      ${payload.reason ? `<p style="background: #FEF2F2; padding: 12px; border-radius: 6px; font-size: 14px; color: #6B7280;">Note from our team: ${payload.reason}</p>` : ""}
+      <p>Hi ${escapeHtml(payload.userName)},</p>
+      <p>We weren't able to confirm your bank transfer for <strong>${escapeHtml(payload.packageTitle)}</strong>.</p>
+      ${payload.reason ? `<p style="background: #FEF2F2; padding: 12px; border-radius: 6px; font-size: 14px; color: #6B7280;">Note from our team: ${escapeHtml(payload.reason)}</p>` : ""}
       <p style="font-size: 13px; color: #6B7280; margin-top: 16px;">
         Please return to your booking to try again, either with a clearer receipt or a different payment method.
       </p>
