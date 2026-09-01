@@ -1,4 +1,4 @@
-const admin = require("firebase-admin");
+const { initializeApp, cert } = require("firebase-admin/app");
 
 const serviceAccount = {
   projectId: process.env.project_id,
@@ -6,8 +6,8 @@ const serviceAccount = {
   privateKey: process.env.private_key.replace(/\\n/g, "\n"),
 };
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+initializeApp({
+  credential: cert(serviceAccount),
 });
 
-module.exports = admin;
+module.exports = require("firebase-admin");
