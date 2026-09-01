@@ -1,12 +1,7 @@
 const Booking = require("../models/Booking");
 const Package = require("../models/Package");
 const { requireAuth, requireAdmin, requireRecentAuth } = require("../utils/authGuards");
-const {
-  sendBookingEmails,
-  sendPaymentConfirmedEmail,
-  sendBankTransferSubmittedEmail,
-  sendBankTransferRejectedEmail,
-} = require("../utils/sendBookingEmails");
+const {sendBookingEmails, sendPaymentConfirmedEmail, sendBankTransferSubmittedEmail, sendBankTransferRejectedEmail,} = require("../utils/sendBookingEmails");
 const { initializeTransaction } = require("../services/paystack.service");
 
 const resolvers = {
