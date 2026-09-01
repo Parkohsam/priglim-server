@@ -12,7 +12,7 @@ const bookingResolvers = require("./resolvers/booking");
 const connectDB = require("./config/db");
 require("./config/firebaseAdmin");
 
-const userTypeDefs = require("./schema/user");
+const userTypeDefs = require("./schema/User");
 const userResolvers = require("./resolvers/User");
 
 const paystackWebhook = require("./webhooks/paystack.webhook");
