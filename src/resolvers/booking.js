@@ -47,6 +47,32 @@ const resolvers = {
         );
       }
 
+      // Server-side validation — never trust the frontend alone for this,
+      // since these fields determine what documents actually get filed
+      // for immigration/visa purposes.
+      const PHONE_PATTERN = /^\d{11}$/;
+      pilgrimDetails.forEach((p, i) => {
+        if (!PHONE_PATTERN.test(p.phoneNumber)) {
+          throw new Error(
+            `Pilgrim ${i + 1}: phone number must be exactly 11 digits.`
+          );
+        }
+
+        if (p.hasPassport) {
+          if (!p.passportImageUrl) {
+            throw new Error(
+              `Pilgrim ${i + 1}: passport image is required for pilgrims with a passport.`
+            );
+          }
+        } else {
+          if (!p.ninImageUrl || !p.stateOfOriginImageUrl || !p.declarationOfAgeImageUrl) {
+            throw new Error(
+              `Pilgrim ${i + 1}: NIN, state of origin certificate, and declaration of age images are all required for pilgrims without a passport.`
+            );
+          }
+        }
+      });
+
       const totalAmount = pkg.price * numberOfPilgrims;
 
       const booking = await Booking.create({
@@ -202,11 +228,6 @@ const resolvers = {
 
   Booking: {
     createdAt: (parent) => parent.createdAt.toISOString(),
-    pilgrimDetails: (parent) =>
-      parent.pilgrimDetails.map((p) => ({
-        ...p.toObject(),
-        dateOfBirth: p.dateOfBirth.toISOString(),
-      })),
   },
 };
 

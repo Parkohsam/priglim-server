@@ -1,14 +1,22 @@
 const typeDefs = /* GraphQL */ `
   type Pilgrim {
     name: String!
-    passportNumber: String!
-    dateOfBirth: String!
+    phoneNumber: String
+    hasPassport: Boolean
+    passportImageUrl: String
+    ninImageUrl: String
+    stateOfOriginImageUrl: String
+    declarationOfAgeImageUrl: String
   }
 
   input PilgrimInput {
     name: String!
-    passportNumber: String!
-    dateOfBirth: String!
+    phoneNumber: String!
+    hasPassport: Boolean!
+    passportImageUrl: String
+    ninImageUrl: String
+    stateOfOriginImageUrl: String
+    declarationOfAgeImageUrl: String
   }
 
   type Booking {

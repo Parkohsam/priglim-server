@@ -3,8 +3,16 @@ const mongoose = require("mongoose");
 const pilgrimSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    passportNumber: { type: String, required: true },
-    dateOfBirth: { type: Date, required: true },
+    phoneNumber: { type: String, required: true },
+    hasPassport: { type: Boolean, required: true },
+
+    // Only present when hasPassport is true
+    passportImageUrl: { type: String },
+
+    // Only present when hasPassport is false
+    ninImageUrl: { type: String },
+    stateOfOriginImageUrl: { type: String },
+    declarationOfAgeImageUrl: { type: String },
   },
   { _id: false }
 );
